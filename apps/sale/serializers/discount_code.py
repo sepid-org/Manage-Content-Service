@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, ParseError
 
-from apps.accounts.models import DiscountCode
+from apps.accounts.models import DiscountCode, User
 from apps.accounts.serializers.user_serializer import UserPublicInfoSerializer
 from apps.sale.serializers.merchandise import MerchandiseSerializer
 from content_management_service.settings.base import DISCOUNT_CODE_LENGTH
@@ -12,14 +12,10 @@ from errors.error_codes import serialize_error
 
 
 class DiscountCodeSerializer(serializers.ModelSerializer):
-    discount_code_limit = serializers.IntegerField(
-        required=False, allow_null=True
-    )
+    discount_code_limit = serializers.IntegerField(required=False, allow_null=True)
     merchandises = MerchandiseSerializer(many=True, required=False)
     user = UserPublicInfoSerializer(required=False, allow_null=True)
-    username = serializers.CharField(
-        max_length=150, required=False, write_only=True
-    )
+    username = serializers.CharField(max_length=150, required=False, write_only=True)
     code = serializers.CharField(
         max_length=DISCOUNT_CODE_LENGTH, required=True, write_only=True
     )
@@ -32,6 +28,17 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
     )
 
     def create(self, validated_data):
+        username = validated_data.pop("username", None)
+        merchandise_ids = validated_data.pop("merchandise_ids", [])
+        data = validated_data
+
+        if username:
+            try:
+                user = User.objects.get(username=username)
+                data["user"] = user
+            except User.DoesNotExist:
+                raise serializers.ValidationError({"username": "User does not exist."})
+
         return DiscountCode.objects.create_discount_code(**validated_data)
 
     class Meta:
@@ -51,9 +58,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
 
 
 class DiscountCodeValidationSerializer(serializers.ModelSerializer):
-    discount_code_limit = serializers.IntegerField(
-        required=False, allow_null=True
-    )
+    discount_code_limit = serializers.IntegerField(required=False, allow_null=True)
     code = serializers.CharField(
         max_length=DISCOUNT_CODE_LENGTH, required=False, allow_null=True
     )
