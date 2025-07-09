@@ -2,7 +2,9 @@ from typing import Any, Optional
 
 from django.db import transaction
 
-from apps.accounts.models import DiscountCode
+from apps.accounts.models import DiscountCode, Merchandise
+from apps.accounts.utils.user_management import find_user
+from apps.core.exceptions import DiscountCodeInvalidUser, MerchandiseNotFound
 
 
 def get_program_discount_codes(
@@ -27,7 +29,7 @@ def get_program_discount_codes(
     return list(queryset)
 
 
-@transaction.atomic()
+@transaction.atomic
 def create_discount_code(
     data: dict[str, Any],
     merchandise_ids: list[str],
@@ -52,13 +54,19 @@ def create_discount_code(
     for merchandise_id in merchandise_ids:
         try:
             merchandise = Merchandise.objects.get(id=merchandise_id)
-        except Merchandise.DoesNotExist:
-            continue
+        except Merchandise.DoesNotExist as err:
+            raise MerchandiseNotFound(
+                details={"merchandise": merchandise_id}
+            ) from err
         discount_code.merchandises.add(merchandise)
 
     # Add user (if provided)
     if username:
         target_user = find_user(user_data={"username": username})
+
+        if target_user is None:
+            raise DiscountCodeInvalidUser(details={"username": username})
+
         discount_code.user = target_user
         discount_code.save()
 
