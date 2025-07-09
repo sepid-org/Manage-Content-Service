@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, ParseError
 
-from apps.accounts.models import DiscountCode
+from apps.accounts.models import DiscountCode, User
 from apps.accounts.serializers.user_serializer import UserPublicInfoSerializer
 from apps.sale.serializers.merchandise import MerchandiseSerializer
 from content_management_service.settings.base import DISCOUNT_CODE_LENGTH

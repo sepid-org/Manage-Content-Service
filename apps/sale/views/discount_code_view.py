@@ -36,16 +36,13 @@ class DiscountCodeViewSet(ModelViewSet):
         )
 
     def create(self, request, *args, **kwargs):
-        username = request.data.pop("user", None)
-        merchandises = request.data.pop("merchandises", [])
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         create_discount_code(
-            data=serializer.validated_data,
-            merchandise_ids=merchandises,
-            username=username,
+            data=serializer.validated_data.get("data"),
+            merchandise_ids=serializer.validated_data.get("merchandise_ids"),
+            username=serializer.validated_data.get("username"),
         )
 
         return Response(status=status.HTTP_201_CREATED)
