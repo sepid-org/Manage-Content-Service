@@ -48,10 +48,18 @@ def create_discount_code(
     # Create discount code
     discount_code = DiscountCode.objects.create_unique(**data)
 
-    # # Add user (if provided)
-    # if username:
-    #     target_user = find_user(user_data={"username": username})
-    #     discount_code.user = target_user
-    #     discount_code.save()
+    # Add merchandises
+    for merchandise_id in merchandise_ids:
+        try:
+            merchandise = Merchandise.objects.get(id=merchandise_id)
+        except Merchandise.DoesNotExist:
+            continue
+        discount_code.merchandises.add(merchandise)
+
+    # Add user (if provided)
+    if username:
+        target_user = find_user(user_data={"username": username})
+        discount_code.user = target_user
+        discount_code.save()
 
     return discount_code
